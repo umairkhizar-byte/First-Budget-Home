@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Griha Ledger</title>
+<meta name="theme-color" content="#3E2247" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ledger" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum:#3E2247; --plum-soft:#5C3563; --ink:#2A1B2E;
+    --rose:#C97B90; --rose-light:#F5DFE4;
+    --gold:#B8935F; --gold-light:#EFE1C6;
+    --sage:#6F8F6B; --sage-light:#E1EAD9;
+    --cream:#FBF6F0; --card:#FFFFFF; --line:#EADFCF;
+    --muted:#8A7E85; --muted2:#A99DA3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:'Manrope',sans-serif; -webkit-tap-highlight-color:transparent;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #app{max-width:480px; margin:0 auto; padding:0 20px 64px; min-height:100vh;}
+  h1,h2,.serif{font-family:'Playfair Display',serif;}
+  .eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.2em; color:var(--gold); text-align:center; margin-top:28px;}
+  .title{font-size:30px; font-weight:700; color:var(--plum); text-align:center; margin:4px 0 0;}
+  .subtitle{font-size:13px; color:var(--muted); text-align:center; margin:4px 0 0;}
+  .month-nav{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px;}
+  .month-arrow{width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--plum); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .month-arrow:disabled{opacity:.35; cursor:default;}
+  .month-label{font-family:'Playfair Display',serif; font-weight:600; font-size:15px; color:var(--plum); min-width:150px; text-align:center;}
+  .month-tag{font-family:'Manrope',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); background:var(--gold-light); padding:2px 7px; border-radius:20px; margin-left:6px; vertical-align:middle;}
+  .divider{display:flex; align-items:center; justify-content:center; gap:8px; margin:18px 0;}
+  .divider span{height:1px; width:28px; background:var(--line); display:block;}
+  .divider i{width:5px; height:5px; background:var(--gold); transform:rotate(45deg); display:block;}
+  .balance-card{
+    border-radius:24px; padding:24px; text-align:center; margin-top:6px;
+    background:linear-gradient(135deg, var(--plum), var(--plum-soft));
+  }
+  .balance-card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--gold-light);}
+  .balance-card .val{font-family:'Playfair Display',serif; font-size:36px; font-weight:700; margin-top:8px; font-variant-numeric:tabular-nums;}
+  .stat-row{display:flex; gap:12px; margin-top:14px;}
+  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px;}
+  .stat .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);}
+  .stat .val{font-family:'Playfair Display',serif; font-weight:700; font-size:18px; margin-top:4px; font-variant-numeric:tabular-nums;}
+  .section-label{margin-top:30px; margin-bottom:10px; font-size:11px; text-transform:uppercase; letter-spacing:.15em; color:var(--muted);}
+  .income-row{
+    width:100%; display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--line); border-radius:18px; padding:14px 16px; cursor:pointer;
+  }
+  .icon-badge{width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; background:var(--sage-light); flex-shrink:0;}
+  .income-row .name{font-family:'Playfair Display',serif; font-weight:600; color:var(--ink); margin:0;}
+  .income-row .count{font-size:13px; color:var(--muted); margin:2px 0 0;}
+  .income-row .amt{font-weight:700; color:var(--sage); font-variant-numeric:tabular-nums; margin-left:auto;}
+  .chev{color:#B8AEB4; font-size:18px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .cat-card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 12px;
+    text-align:left; display:flex; flex-direction:column; gap:8px; cursor:pointer;
+  }
+  .cat-card:active, .income-row:active, button:active{transform:scale(.97);}
+  .cat-badge{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px;}
+  .cat-name{font-family:'Playfair Display',serif; font-weight:600; font-size:14px; line-height:1.25; margin:0;}
+  .cat-count{font-size:11px; color:var(--muted2); margin:2px 0 0;}
+  .cat-total{font-weight:700; color:var(--plum); font-variant-numeric:tabular-nums; margin:0;}
+  .breakdown-item{margin-bottom:10px;}
+  .breakdown-item .row{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;}
+  .breakdown-item .row .nm{color:var(--ink); font-weight:600;}
+  .breakdown-item .row .vv{color:var(--muted); font-variant-numeric:tabular-nums;}
+  .bar-bg{height:7px; background:var(--line); border-radius:5px; overflow:hidden;}
+  .bar-fg{height:100%; border-radius:5px;}
+  .footer-note{text-align:center; font-size:12px; color:#C3B8BE; font-style:italic; font-family:'Playfair Display',serif; margin-top:36px;}
+
+  /* header for detail views */
+  .dheader{display:flex; align-items:center; gap:12px; padding:28px 0 8px; position:sticky; top:0; background:var(--cream); z-index:5;}
+  .back-btn{width:38px; height:38px; border-radius:50%; background:var(--card); border:1px solid var(--line); color:var(--plum); display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer;}
+  .dheader h2{font-size:20px; font-weight:700; color:var(--plum); margin:0;}
+  .dheader-month{font-size:12px; color:var(--muted); margin:2px 0 0;}
+  .dheader .tot{font-weight:800; color:var(--plum); font-variant-numeric:tabular-nums;}
+
+  .form-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; margin-bottom:16px;}
+  .toggle-row{display:flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:12px;}
+  .toggle-row button{flex:1; padding:10px; font-size:14px; font-family:'Manrope',sans-serif; font-weight:600; border:none; background:transparent; color:var(--ink); cursor:pointer;}
+  .toggle-row button.active{background:var(--plum); color:#fff;}
+  .form-row{display:flex; gap:8px; margin-bottom:8px;}
+  input[type=date], input[type=number], input[type=text]{
+    border:1px solid var(--line); border-radius:12px; padding:9px 12px; font-size:14px; font-family:'Manrope',sans-serif; color:var(--ink); width:100%; background:#fff;
+  }
+  input:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  .add-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--plum); color:#fff; font-weight:700; border:none; border-radius:12px; padding:11px; font-size:14px; cursor:pointer; font-family:'Manrope',sans-serif;
+  }
+  .empty-msg{text-align:center; font-size:14px; color:var(--muted2); font-style:italic; font-family:'Playfair Display',serif; padding:32px 0;}
+  .entry{display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:8px;}
+  .entry .date{font-weight:700; color:var(--ink); margin:0;}
+  .entry .note{font-size:13px; color:var(--muted); margin:3px 0 0;}
+  .entry .tag{font-size:11px; padding:2px 8px; border-radius:20px; margin-left:6px;}
+  .entry .amt{font-weight:700; color:var(--rose); font-variant-numeric:tabular-nums; margin-left:auto;}
+  .del-btn{background:none; border:none; color:#C3B8BE; font-size:16px; cursor:pointer; padding:4px;}
+
+  .price-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; margin-bottom:14px;}
+  .price-card label{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted);}
+  .milk-hint{font-size:12px; color:var(--muted2); margin-bottom:8px;}
+  .milk-table{border:1px solid var(--line); border-radius:18px; overflow:hidden;}
+  .milk-row{display:flex; align-items:center; gap:10px; padding:8px 14px;}
+  .milk-row .day{font-weight:600; width:56px; font-size:14px;}
+  .milk-row input{text-align:right;}
+  .milk-row .unit{font-size:12px; color:var(--muted2); width:16px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------------- data ---------------- */
+const CATEGORIES = [
+  { key:"groceries", label:"Groceries", emoji:"🧺", type:"list" },
+  { key:"maid1", label:"Maid 1", emoji:"🧹", type:"list" },
+  { key:"maid2", label:"Maid 2", emoji:"🧹", type:"list" },
+  { key:"milk", label:"Milk", emoji:"🥛", type:"milk" },
+  { key:"fuel", label:"Fuel", emoji:"⛽", type:"list" },
+  { key:"chickenMeat", label:"Chicken & Meat", emoji:"🍗", type:"listType" },
+  { key:"dailyExpense", label:"Daily Expense", emoji:"💳", type:"list" },
+  { key:"medicine", label:"Medicine & Vitamins", emoji:"💊", type:"list" },
+  { key:"fruits", label:"Fruits", emoji:"🍎", type:"list" },
+  { key:"tuition", label:"Tuition Fee", emoji:"🎓", type:"list" },
+  { key:"other", label:"Other Expense", emoji:"✳️", type:"list" },
+];
+const CAT_MAP = Object.fromEntries(CATEGORIES.map(c=>[c.key,c]));
+const ACCENTS = [
+  {bg:"#F5DFE4", fg:"#C97B90"},
+  {bg:"#EFE1C6", fg:"#B8935F"},
+  {bg:"#E5DCEA", fg:"#5C3563"},
+  {bg:"#E1EAD9", fg:"#6F8F6B"},
+];
+const PIE_COLORS = ["#C97B90","#B8935F","#5C3563","#6F8F6B","#D9A9B5","#D6B98C","#8C6A94","#96AF8F","#E0C9CE","#CBB8DA","#B7C9AE"];
+
+function emptyData(){
+  return {
+    income: [], groceries: [], maid1: [], maid2: [],
+    milk: { rows: Array(31).fill(""), pricePerLiter: "" },
+    fuel: [], chickenMeat: [], dailyExpense: [], medicine: [], fruits: [], tuition: [], other: []
+  };
+}
+function normalizeMonth(raw){
+  return Object.assign(emptyData(), raw, { milk: Object.assign(emptyData().milk, (raw&&raw.milk)||{}) });
+}
+function monthKey(d){ d = d || new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); }
+function monthLabel(key){
+  const [y,m] = key.split("-").map(Number);
+  return new Date(y, m-1, 1).toLocaleDateString("en-PK",{month:"long", year:"numeric"});
+}
+function shiftMonth(key, delta){
+  const [y,m] = key.split("-").map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  return monthKey(d);
+}
+
+function loadMonths(){
+  try{
+    const raw = localStorage.getItem("home-ledger-months");
+    if(raw){
+      const parsed = JSON.parse(raw);
+      Object.keys(parsed).forEach(k => parsed[k] = normalizeMonth(parsed[k]));
+      return parsed;
+    }
+    // migrate old single-ledger format, if present, into the current month
+    const old = localStorage.getItem("home-ledger-data");
+    if(old){
+      const parsed = normalizeMonth(JSON.parse(old));
+      return { [monthKey()]: parsed };
+    }
+  }catch(e){}
+  return {};
+}
+function saveMonths(){ localStorage.setItem("home-ledger-months", JSON.stringify(months)); }
+
+let months = loadMonths();
+let currentMonth = monthKey();
+if(!months[currentMonth]) months[currentMonth] = emptyData();
+let data = months[currentMonth];
+function saveData(){ saveMonths(); }
+function goToMonth(key){
+  currentMonth = key;
+  if(!months[currentMonth]) months[currentMonth] = emptyData();
+  data = months[currentMonth];
+  view = "home";
+  render();
+  window.scrollTo(0,0);
+}
+
+let view = "home";
+
+/* ---------------- helpers ---------------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const todayStr = () => new Date().toISOString().slice(0,10);
+const inr = (n) => "Rs. " + (Number(n)||0).toLocaleString("en-PK",{maximumFractionDigits:2});
+const esc = (s) => (s||"").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function fmtDate(d){
+  if(!d) return "";
+  const dt = new Date(d+"T00:00:00");
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString("en-PK",{day:"numeric",month:"short",year:"numeric"});
+}
+function categoryTotal(key){
+  if(key==="milk"){
+    const liters = (data.milk.rows||[]).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const price = parseFloat(data.milk.pricePerLiter)||0;
+    return liters*price;
+  }
+  return (data[key]||[]).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+}
+
+function addEntry(key, entry){
+  data[key].push(Object.assign({id:uid()}, entry));
+  saveData(); render();
+}
+function deleteEntry(key, id){
+  data[key] = data[key].filter(e=>e.id!==id);
+  saveData(); render();
+}
+function updateMilkRow(idx, value){
+  data.milk.rows[idx] = value; saveData();
+}
+function updateMilkPrice(value){
+  data.milk.pricePerLiter = value; saveData();
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = view==="home" ? renderHome() : renderDetail(view);
+  attachHandlers();
+}
+
+function renderHome(){
+  const totalIncome = categoryTotal("income");
+  const totalExpense = CATEGORIES.reduce((s,c)=>s+categoryTotal(c.key),0);
+  const balance = totalIncome - totalExpense;
+  const today = new Date().toLocaleDateString("en-PK",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+  const breakdown = CATEGORIES.map(c=>({name:c.label,value:categoryTotal(c.key)})).filter(d=>d.value>0)
+    .sort((a,b)=>b.value-a.value);
+  const maxVal = breakdown.length ? breakdown[0].value : 0;
+
+  let html = `
+    <div class="eyebrow">Griha Ledger</div>
+    <h1 class="title">Our Home</h1>
+    <p class="subtitle">${today}</p>
+
+    <div class="month-nav">
+      <button class="month-arrow" data-month-shift="-1">‹</button>
+      <div class="month-label">${monthLabel(currentMonth)}${currentMonth===monthKey() ? '' : ' <span class="month-tag">past</span>'}</div>
+      <button class="month-arrow" data-month-shift="1" ${currentMonth>=monthKey() ? 'disabled' : ''}>›</button>
+    </div>
+
+    <div class="divider"><span></span><i></i><span></span></div>
+
+    <div class="balance-card">
+      <div class="lbl">Balance so far</div>
+      <div class="val" style="color:${balance>=0?'#F3E9CF':'#F0BFC7'}">${inr(balance)}</div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="lbl">Income</div><div class="val" style="color:#6F8F6B">${inr(totalIncome)}</div></div>
+      <div class="stat"><div class="lbl">Expenses</div><div class="val" style="color:#C97B90">${inr(totalExpense)}</div></div>
+    </div>
+
+    <div class="section-label">Income</div>
+    <div class="income-row" data-open="income">
+      <div class="icon-badge">📈</div>
+      <div>
+        <p class="name">Income</p>
+        <p class="count">${data.income.length} entries</p>
+      </div>
+      <div class="amt">${inr(totalIncome)}</div>
+      <div class="chev">›</div>
+    </div>
+
+    <div class="section-label">Expenses</div>
+    <div class="grid">
+  `;
+
+  CATEGORIES.forEach((cat,i)=>{
+    const acc = ACCENTS[i%ACCENTS.length];
+    const total = categoryTotal(cat.key);
+    const count = cat.type==="milk" ? null : (data[cat.key]||[]).length;
+    html += `
+      <div class="cat-card" data-open="${cat.key}">
+        <div class="cat-badge" style="background:${acc.bg}">${cat.emoji}</div>
+        <div>
+          <p class="cat-name">${cat.label}</p>
+          <p class="cat-count">${count!==null ? count+' entries' : 'monthly log'}</p>
+        </div>
+        <p class="cat-total">${inr(total)}</p>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  if(breakdown.length){
+    html += `<div class="divider"><span></span><i></i><span></span></div>
+      <div class="section-label" style="text-align:center">Where it's going</div>`;
+    breakdown.forEach((d,i)=>{
+      const pct = maxVal ? (d.value/maxVal*100) : 0;
+      html += `
+        <div class="breakdown-item">
+          <div class="row"><span class="nm">${esc(d.name)}</span><span class="vv">${inr(d.value)}</span></div>
+          <div class="bar-bg"><div class="bar-fg" style="width:${pct}%; background:${PIE_COLORS[i%PIE_COLORS.length]}"></div></div>
+        </div>
+      `;
+    });
+  }
+
+  html += `<p class="footer-note">✦ kept with love, one entry at a time</p>`;
+  return html;
+}
+
+function renderDetail(key){
+  if(key==="milk") return renderMilk();
+  const isIncome = key==="income";
+  const cat = isIncome ? {label:"Income"} : CAT_MAP[key];
+  const entries = [...data[key]].sort((a,b)=> a.date<b.date?1:-1);
+  const total = categoryTotal(key);
+  const accent = isIncome ? "#6F8F6B" : "#C97B90";
+  const showType = key==="chickenMeat";
+
+  let html = `
+    <div class="dheader">
+      <div class="back-btn" data-back="1">←</div>
+      <div style="flex:1">
+        <h2>${cat.label}</h2>
+        <p class="dheader-month">${monthLabel(currentMonth)}</p>
+      </div>
+      <div class="tot">${inr(total)}</div>
+    </div>
+
+    <div class="form-card">
+      ${showType ? `
+      <div class="toggle-row" id="typeToggle">
+        <button data-type="Chicken" class="active">Chicken</button>
+        <button data-type="Meat">Meat</button>
+      </div>` : ``}
+      <div class="form-row">
+        <input type="date" id="f-date" value="${todayStr()}" />
+        <input type="number" inputmode="decimal" id="f-amount" placeholder="Amount" />
+      </div>
+      <input type="text" id="f-note" placeholder="${isIncome ? 'Source (optional)' : 'Note (optional)'}" style="margin-bottom:10px" />
+      <button class="add-btn" id="f-add">+ Add entry</button>
+    </div>
+  `;
+
+  if(entries.length===0){
+    html += `<p class="empty-msg">Nothing logged yet — add the first entry above.</p>`;
+  } else {
+    entries.forEach(e=>{
+      html += `
+        <div class="entry">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center">
+              <p class="date">${fmtDate(e.date)}</p>
+              ${e.type ? `<span class="tag" style="background:${e.type==='Chicken'?'#EFE1C6':'#F5DFE4'};color:${e.type==='Chicken'?'#B8935F':'#C97B90'}">${e.type}</span>` : ``}
+            </div>
+            ${e.note ? `<p class="note">${esc(e.note)}</p>` : ``}
+          </div>
+          <div class="amt" style="color:${accent}">${inr(e.amount)}</div>
+          <button class="del-btn" data-del="${e.id}" data-key="${key}">🗑</button>
+        </div>
+      `;
+    });
+  }
+  return html;
+}
+
+function renderMilk(){
+  const rows = data.milk.rows;
+  const liters = rows.reduce((s,v)=>s+(parseFloat(v)||0),0);
+  const price = parseFloat(data.milk.pricePerLiter)||0;
+  const total = liters*price;
+
+  let html = `
+    <div class="dheader">
+      <div class="back-btn" data-back="1">←</div>
+      <div style="flex:1">
+        <h2>Milk</h2>
+        <p class="dheader-month">${monthLabel(currentMonth)}</p>
+      </div>
+      <div class="tot">${inr(total)}</div>
+    </div>
+
+    <div class="price-card">
+      <label>Price per litre</label>
+      <div class="form-row" style="margin-top:6px">
+        <input type="number" inputmode="decimal" id="milk-price" placeholder="e.g. 66" value="${data.milk.pricePerLiter||''}" />
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="lbl">Total litres</div><div class="val" style="color:#3E2247">${liters.toFixed(1)} L</div></div>
+      <div class="stat"><div class="lbl">Total cost</div><div class="val" style="color:#C97B90">${inr(total)}</div></div>
+    </div>
+
+    <p class="milk-hint" style="margin-top:16px">Enter litres for each day. Leave blank on days you didn't take milk, or for days past the month's end.</p>
+
+    <div class="milk-table">
+  `;
+  rows.forEach((v,i)=>{
+    html += `
+      <div class="milk-row" style="background:${i%2===0?'#fff':'#FCF8F3'}; ${i<30?'border-bottom:1px solid var(--line)':''}">
+        <div class="day">Day ${i+1}</div>
+        <input type="number" inputmode="decimal" step="0.5" placeholder="0" data-milk-row="${i}" value="${v||''}" />
+        <div class="unit">L</div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  return html;
+}
+
+/* ---------------- events ---------------- */
+function attachHandlers(){
+  document.querySelectorAll("[data-open]").forEach(el=>{
+    el.addEventListener("click", ()=>{ view = el.getAttribute("data-open"); render(); window.scrollTo(0,0); });
+  });
+  document.querySelectorAll("[data-month-shift]").forEach(el=>{
+    el.addEventListener("click", ()=>{ goToMonth(shiftMonth(currentMonth, parseInt(el.getAttribute("data-month-shift")))); });
+  });
+  document.querySelectorAll("[data-back]").forEach(el=>{
+    el.addEventListener("click", ()=>{ view = "home"; render(); window.scrollTo(0,0); });
+  });
+  document.querySelectorAll("[data-del]").forEach(el=>{
+    el.addEventListener("click", ()=>{ deleteEntry(el.getAttribute("data-key"), el.getAttribute("data-del")); });
+  });
+
+  const addBtn = document.getElementById("f-add");
+  if(addBtn){
+    let selectedType = "Chicken";
+    const toggle = document.getElementById("typeToggle");
+    if(toggle){
+      toggle.querySelectorAll("button").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          selectedType = btn.getAttribute("data-type");
+          toggle.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+        });
+      });
+    }
+    addBtn.addEventListener("click", ()=>{
+      const dateEl = document.getElementById("f-date");
+      const amtEl = document.getElementById("f-amount");
+      const noteEl = document.getElementById("f-note");
+      const amt = parseFloat(amtEl.value);
+      if(!amt || amt<=0 || !dateEl.value) return;
+      const entry = { date: dateEl.value, amount: amt, note: noteEl.value.trim() };
+      if(toggle) entry.type = selectedType;
+      addEntry(view, entry);
+    });
+  }
+
+  const milkPrice = document.getElementById("milk-price");
+  if(milkPrice){
+    milkPrice.addEventListener("input", (e)=>{ updateMilkPrice(e.target.value); refreshMilkTotals(); });
+  }
+  document.querySelectorAll("[data-milk-row]").forEach(el=>{
+    el.addEventListener("input", (e)=>{
+      updateMilkRow(parseInt(el.getAttribute("data-milk-row")), e.target.value);
+      refreshMilkTotals();
+    });
+  });
+}
+
+// avoid full re-render on every keystroke in milk table (keeps focus in inputs)
+function refreshMilkTotals(){
+  const rows = data.milk.rows;
+  const liters = rows.reduce((s,v)=>s+(parseFloat(v)||0),0);
+  const price = parseFloat(data.milk.pricePerLiter)||0;
+  const total = liters*price;
+  const totEl = document.querySelector(".dheader .tot");
+  if(totEl) totEl.textContent = inr(total);
+  const stats = document.querySelectorAll(".stat .val");
+  if(stats[0]) stats[0].textContent = liters.toFixed(1) + " L";
+  if(stats[1]) stats[1].textContent = inr(total);
+}
+
+render();
+
+/* ---------------- service worker ---------------- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
